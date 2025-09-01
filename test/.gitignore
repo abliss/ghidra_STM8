@@ -1,2 +1,4 @@
 test_prog.*
 testProject.*
+decompiled.c
+expected_decompilation.c

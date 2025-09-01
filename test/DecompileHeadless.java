@@ -25,31 +25,25 @@ import ghidra.app.decompiler.*;
 import ghidra.program.model.symbol.IdentityNameTransformer;
 public class DecompileHeadless extends GhidraScript {
       
-    private void exportToC(DecompileResults results ) {
-        try {
-            ClangTokenGroup grp = results.getCCodeMarkup();
-            if(grp != null) {
-                File tmpFile = new File("/dev/stdout");
-                PrintWriter writer = new PrintWriter(new FileOutputStream(tmpFile));
-                PrettyPrinter printer = new PrettyPrinter(results.getFunction(), grp, new IdentityNameTransformer());
-                DecompiledFunction decompFunc = printer.print();
-                writer.write(decompFunc.getC());
-                writer.close();
-            }
-        }
-        catch (IOException e) {
-            System.out.println(e.getStackTrace());
-        }
-    }
-        
     @Override
     public void run() throws Exception {
         var program = this.getCurrentProgram();
         DecompInterface ifc = new DecompInterface();
         ifc.openProgram(program);
-        for(var func : program.getFunctionManager().getFunctions(true)) {
-            var results = ifc.decompileFunction(func, 100000, null);
-            exportToC(results);
+        FileOutputStream fos = new FileOutputStream(new File("decompiled.c"));
+        PrintWriter writer = new PrintWriter(fos);
+        try {
+            for(var func : program.getFunctionManager().getFunctions(true)) {
+                var results = ifc.decompileFunction(func, 100000, null);
+                ClangTokenGroup grp = results.getCCodeMarkup();
+                if(grp != null) {
+                    PrettyPrinter printer = new PrettyPrinter(results.getFunction(), grp, new IdentityNameTransformer());
+                    writer.write(printer.print().getC());
+                }
+            }
+        } finally {
+            writer.close();
+            fos.close();
         }
     }
 
