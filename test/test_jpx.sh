@@ -1,16 +1,15 @@
 #!/bin/bash 
 set -euxo pipefail
 
-rm -rf testProject.rep testProject.gpr
+source common.sh
+compile_and_decompile <<EOF
+int test_function(void) {
+  return 123;
+}
 
-sdcc -mstm8 jpx0.c --out-fmt-elf
-
-cat jpx0.lst
-
-analyzeHeadless="$GHIDRA_HOME/support/analyzeHeadless"
-
-"$analyzeHeadless" "$TEST_DIR" testProject -import jpx0.elf  -processor "STM8:BE:16:default" \
-                   -scriptPath "$TEST_DIR" -postScript     'DecompileHeadless.java'
-
-
-
+int main(void) {
+  volatile int(*function)(void) = test_function;
+  function();
+  return function();
+}
+EOF
